@@ -2,6 +2,10 @@
     "files": [
         "qrhelper.py",
         "form.ui",
-        "ui_form.py"
+        "ui_form.py",
+        "codebarwindow.ui",
+        "ui_codebarwindow.py",
+        "res.qrc",
+        "res_rc.py"
     ]
 }
