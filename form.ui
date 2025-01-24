@@ -29,7 +29,11 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>QrHelper</string>
+   <string>QR Scanner</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="res.qrc">
+    <normaloff>:/icons/icon.png</normaloff>:/icons/icon.png</iconset>
   </property>
   <widget class="QScrollArea" name="scroll_area">
    <property name="geometry">
@@ -166,6 +170,8 @@
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="res.qrc"/>
+ </resources>
  <connections/>
 </ui>

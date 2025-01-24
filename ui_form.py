@@ -18,6 +18,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QApplication, QGroupBox, QHBoxLayout, QLabel,
     QPushButton, QRadioButton, QScrollArea, QSizePolicy,
     QWidget)
+import res_rc
 
 class Ui_QrHelper(object):
     def setupUi(self, QrHelper):
@@ -31,6 +32,9 @@ class Ui_QrHelper(object):
         QrHelper.setSizePolicy(sizePolicy)
         QrHelper.setMinimumSize(QSize(440, 330))
         QrHelper.setMaximumSize(QSize(440, 330))
+        icon = QIcon()
+        icon.addFile(u":/icons/icon.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        QrHelper.setWindowIcon(icon)
         self.scroll_area = QScrollArea(QrHelper)
         self.scroll_area.setObjectName(u"scroll_area")
         self.scroll_area.setGeometry(QRect(0, 0, 440, 300))
@@ -85,7 +89,7 @@ class Ui_QrHelper(object):
     # setupUi
 
     def retranslateUi(self, QrHelper):
-        QrHelper.setWindowTitle(QCoreApplication.translate("QrHelper", u"QrHelper", None))
+        QrHelper.setWindowTitle(QCoreApplication.translate("QrHelper", u"QR Scanner", None))
         self.clear_button.setText(QCoreApplication.translate("QrHelper", u"Clear", None))
         self.groupBox.setTitle("")
         self.show_pop.setText(QCoreApplication.translate("QrHelper", u"Popup", None))
