@@ -35,6 +35,9 @@ Thumbs.db
 *.user
 /.qmake.cache
 /.qmake.stash
+/dist
+/build
+*.spec
 
 # qtcreator generated files
 *.pro.user*
@@ -72,4 +75,3 @@ CMakeLists.txt.user*
 # --------
 *.dll
 *.exe
-
