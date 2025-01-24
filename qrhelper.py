@@ -6,13 +6,15 @@ import zxingcpp
 import webbrowser
 import numpy as np
 import keyboard
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QSystemTrayIcon, QMenu, QVBoxLayout, QLabel, QPushButton
+from collections import deque
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QSystemTrayIcon, QMenu, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTextEdit, QFrame, QMessageBox
 from PySide6.QtGui import QPixmap, QImage, QGuiApplication, QScreen, QPainter, QPen, QColor, QIcon, QAction
-from PySide6.QtCore import Qt, QTimer, QMetaObject, Slot
+from PySide6.QtCore import Qt, QTimer, QMetaObject, Slot, QSettings
 
 # Important:
 # You need to run the following command to generate the ui_form.py file
 #     pyside6-uic form.ui -o ui_form.py
+#     pyside6-uic codebarwindow.ui -o ui_codebarwindow.py
 from ui_form import Ui_QrHelper
 from ui_codebarwindow import Ui_CodeBarWindow
 import res_rc
@@ -39,7 +41,10 @@ class CodeBarWindow(QWidget):
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.Tool | Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        # self.setWindowOpacity(1)
+        shadow = QWidget(self)
+        shadow.setGeometry(0, 0, self.width(), self.height())
+        shadow.setStyleSheet("QWidget{border-radius:10px; background-color:rgba(32,32,32,160);}")
+        shadow.lower()
 
         self.close_callback = close_callback
 
@@ -87,6 +92,7 @@ class QrHelper(QMainWindow):
         self.ui.setupUi(self)
         self.overlay = Overlay()
         self.codebar_windows = []
+        self.recent = deque(maxlen=20)
 
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(QIcon(":/icons/icon.png"))
@@ -98,9 +104,24 @@ class QrHelper(QMainWindow):
         self.tray_icon.setContextMenu(tray_menu)
         show_action.triggered.connect(self.show)
         quit_action.triggered.connect(self.exit_app)
+        self.tray_icon.activated.connect(lambda reason: self.show() if reason == QSystemTrayIcon.DoubleClick else None)
         self.tray_icon.show()
 
+        self.scroll_layout = QVBoxLayout(self.ui.scroll_widget)
+
+        self.ui.clear_button.clicked.connect(self.clear_all)
+
         self.setWindowIcon(QIcon(":/icons/icon.png"))
+
+        self.ui.show_pop.toggled.connect(self.save_settings)
+        self.ui.show_list.toggled.connect(self.save_settings)
+
+        settings = QSettings("the0cp", "qr-scan")
+        selected_option = settings.value("selected_option", "Popup")
+        if selected_option == "Popup":
+            self.ui.show_pop.setChecked(True)
+        else:
+            self.ui.show_list.setChecked(True)
 
         keyboard.add_hotkey('ctrl+shift+q', lambda: QMetaObject.invokeMethod(self, "capture_and_decode", Qt.QueuedConnection))
 
@@ -123,22 +144,95 @@ class QrHelper(QMainWindow):
         if len(barcodes) == 0:
             print("Could not find any barcode.")
             return -1
+
+        settings = QSettings("the0cp", "qr-scan")
+        selected_option = settings.value("selected_option", "Popup")
         for barcode in barcodes:
-            print('Found barcode:'
-                  f'\n Text:    "{barcode.text}"'
-                  f'\n Format:   {barcode.format}'
-                  f'\n Content:  {barcode.content_type}'
-                  f'\n Position: {barcode.position}')
-            self.show_code_bar_window(barcode)
+            self.recent.append(barcode.text)
+
+        if selected_option == "Popup":
+            if self.codebar_windows:
+                msg_box = QMessageBox()
+                msg_box.setIcon(QMessageBox.Warning)
+                msg_box.setWindowTitle("Warning")
+                msg_box.setText("Close all popups first")
+                msg_box.setStandardButtons(QMessageBox.Ok)
+                msg_box.exec()
+                return 0
+            else:
+                for barcode in barcodes:
+                    self.show_code_bar_window(barcode)
+                self.update_recent()
+                return 0
+        self.update_recent()
+        self.show();
         return 0
+
+    def update_recent(self):
+        for i in reversed(range(self.scroll_layout.count())):
+            item = self.scroll_layout.itemAt(i)
+            widget = item.widget()
+            if widget is not None:
+                widget.setParent(None)
+            else:
+                self.scroll_layout.removeItem(item)
+        for text in self.recent:
+            self.add_recent_unit(text)
+
+    def add_recent_unit(self, text):
+        text_edit = QTextEdit()
+        text_edit.setText(text)
+        text_edit.setFixedSize(265, 35)
+        text_edit.setReadOnly(True)
+        text_edit.setStyleSheet("QTextEdit { border: 2px solid palette(dark); border-radius: 10px}")
+
+        copy_button = QPushButton()
+        open_button = QPushButton()
+        delete_button = QPushButton()
+        copy_button.setIcon(QIcon(":/icons/copy.png"))
+        open_button.setIcon(QIcon(":/icons/open.png"))
+        delete_button.setIcon(QIcon(":/icons/close.png"))
+        copy_button.setFixedSize(35, 35)
+        open_button.setFixedSize(35, 35)
+        delete_button.setFixedSize(35, 35)
+
+        copy_button.clicked.connect(lambda: QApplication.clipboard().setText(text))
+        open_button.clicked.connect(lambda: webbrowser.open(text))
+        delete_button.clicked.connect(lambda: self.remove_recent_unit(unit_frame, text))
+
+        unit_layout = QHBoxLayout()
+        unit_layout.setSpacing(0)
+        unit_layout.addWidget(text_edit)
+        unit_layout.addWidget(copy_button)
+        unit_layout.addWidget(open_button)
+        unit_layout.addWidget(delete_button)
+
+        unit_frame = QFrame()
+        unit_frame.setLayout(unit_layout)
+        unit_frame.setFixedSize(410, 55)
+        unit_frame.setStyleSheet("""
+            QFrame#UnitFrame{
+                border: 1px solid #235f73;
+                border-radius: 10px;
+            }
+            """)
+        unit_frame.setObjectName("UnitFrame")
+        self.scroll_layout.insertWidget(0, unit_frame)
+        self.scroll_layout.addStretch()
+
+    def remove_recent_unit(self, unit_frame, text):
+        self.scroll_layout.removeWidget(unit_frame)
+        unit_frame.setParent(None)
+        if text in self.recent:
+            self.recent.remove(text)
 
     def show_code_bar_window(self, barcode):
         position = barcode.position
         screen = QGuiApplication.primaryScreen().availableGeometry()
         x = position.bottom_left.x
         y = position.bottom_left.y
-        width = 420
-        height = 62
+        width = 300
+        height = 70
 
         if x + width > screen.width():
             x = screen.width() - width
@@ -159,6 +253,18 @@ class QrHelper(QMainWindow):
             self.codebar_windows.remove(code_window)
         code_window.deleteLater()
 
+    def clear_all(self):
+        self.recent.clear()
+        for window in self.codebar_windows:
+            window.close()
+        for i in reversed(range(self.scroll_layout.count())):
+            item = self.scroll_layout.itemAt(i)
+            widget = item.widget()
+            if widget is not None:
+                widget.setParent(None)
+            else:
+                self.scroll_layout.removeItem(item)
+
     def pixmap2cv(self, pixmap):
         qimage = pixmap.toImage()
         width = qimage.width()
@@ -167,11 +273,17 @@ class QrHelper(QMainWindow):
         arr = np.array(ptr).reshape((height, width, 4))  # RGBA Array
         return cv2.cvtColor(arr, cv2.COLOR_RGBA2BGR)
 
+    def save_settings(self):
+        settings = QSettings("the0cp", "qr-scan")
+        settings.setValue("selected_option", "Popup" if self.ui.show_pop.isChecked() else "List")
+
     def closeEvent(self, event):
         self.hide()
         event.ignore()
 
     def exit_app(self):
+        for window in self.codebar_windows:
+            window.close()
         self.tray_icon.hide()
         QApplication.instance().quit()
 

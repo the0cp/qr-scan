@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>370</width>
-    <height>60</height>
+    <width>300</width>
+    <height>70</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -18,8 +18,14 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>370</width>
-    <height>60</height>
+    <width>300</width>
+    <height>70</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>300</width>
+    <height>70</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -28,9 +34,9 @@
   <widget class="QTextEdit" name="text_box">
    <property name="geometry">
     <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>300</width>
+     <x>5</x>
+     <y>5</y>
+     <width>220</width>
      <height>60</height>
     </rect>
    </property>
@@ -41,14 +47,21 @@
   <widget class="QPushButton" name="close_button">
    <property name="geometry">
     <rect>
-     <x>300</x>
-     <y>35</y>
+     <x>225</x>
+     <y>40</y>
      <width>70</width>
      <height>25</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <stylestrategy>PreferDefault</stylestrategy>
+     <hintingpreference>PreferNoHinting</hintingpreference>
+    </font>
+   </property>
    <property name="text">
-    <string>Close</string>
+    <string>Cancel</string>
    </property>
    <property name="icon">
     <iconset resource="res.qrc">
@@ -58,8 +71,8 @@
   <widget class="QPushButton" name="copy_button">
    <property name="geometry">
     <rect>
-     <x>300</x>
-     <y>0</y>
+     <x>225</x>
+     <y>5</y>
      <width>35</width>
      <height>35</height>
     </rect>
@@ -81,8 +94,8 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>335</x>
-     <y>0</y>
+     <x>260</x>
+     <y>5</y>
      <width>35</width>
      <height>35</height>
     </rect>
