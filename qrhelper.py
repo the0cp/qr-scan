@@ -9,7 +9,7 @@ import keyboard
 from collections import deque
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QSystemTrayIcon, QMenu, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTextEdit, QFrame, QMessageBox
 from PySide6.QtGui import QPixmap, QImage, QGuiApplication, QScreen, QPainter, QPen, QColor, QIcon, QAction
-from PySide6.QtCore import Qt, QTimer, QMetaObject, Slot, QSettings
+from PySide6.QtCore import Qt, QTimer, QMetaObject, Slot, QSettings, QSharedMemory
 
 # Important:
 # You need to run the following command to generate the ui_form.py file
@@ -125,6 +125,17 @@ class QrHelper(QMainWindow):
 
         keyboard.add_hotkey('ctrl+shift+q', lambda: QMetaObject.invokeMethod(self, "capture_and_decode", Qt.QueuedConnection))
 
+        self.shared_memory = QSharedMemory("SingleInstanceAppKey")
+        if not self.shared_memory.create(1):
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle("Warning")
+            msg_box.setText("Another instance of QR Scanner is already running.")
+            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.setWindowIcon(QIcon(":/icons/icon.png"))
+            msg_box.exec()
+            sys.exit(1)
+
     @Slot()
     def capture_and_decode(self):
         screenshot = self.capture_fullscreen()
@@ -157,6 +168,7 @@ class QrHelper(QMainWindow):
                 msg_box.setWindowTitle("Warning")
                 msg_box.setText("Close all popups first")
                 msg_box.setStandardButtons(QMessageBox.Ok)
+                msg_box.setWindowIcon(QIcon(":/icons/icon.png"))
                 msg_box.exec()
                 return 0
             else:
