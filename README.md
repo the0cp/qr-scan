@@ -11,6 +11,13 @@ Download: [https://github.com/the0cp/qr-scan/releases](https://github.com/the0cp
 - Options to display popups near the qr-codes or display the list window directly
 - Easy Copy / Open in browser
 
+## Screenshots
+
+![image](https://github.com/user-attachments/assets/5f0665e3-8438-47f2-a378-21a4062cf7b5)
+
+![image](https://github.com/user-attachments/assets/52ec9f6c-1f6c-471c-9362-2d4de75e3d70)
+
+
 ## Build
 
 ```
