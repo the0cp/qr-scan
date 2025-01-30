@@ -1,14 +1,21 @@
 # This Python file uses the following encoding: utf-8
-import sys
-import cv2
-import re
-import zxingcpp
-import webbrowser
-import numpy as np
-import keyboard
+from sys import exit, argv
+from re import compile, match, IGNORECASE
+from webbrowser import open as web_open
+from keyboard import add_hotkey
 from collections import deque
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QSystemTrayIcon, QMenu, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTextEdit, QFrame, QMessageBox
-from PySide6.QtGui import QPixmap, QImage, QGuiApplication, QScreen, QPainter, QPen, QColor, QIcon, QAction
+from cv2 import cvtColor, COLOR_RGBA2BGR
+from numpy import array
+from zxingcpp import read_barcodes
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QSystemTrayIcon,
+    QMenu, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QTextEdit, QFrame, QMessageBox
+)
+from PySide6.QtGui import (
+    QPixmap, QImage, QGuiApplication, QScreen,
+    QPainter, QPen, QColor, QIcon, QAction
+)
 from PySide6.QtCore import Qt, QTimer, QMetaObject, Slot, QSettings, QSharedMemory
 
 # Important:
@@ -75,15 +82,15 @@ class CodeBarWindow(QWidget):
         self.close()
 
     def is_url(self, text):
-        url_regex = re.compile(
+        url_regex = compile(
             r'^[a-zA-Z][a-zA-Z\d+\-.]*://'
             r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'
             r'localhost|' # localhost
             r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|' # ipv4
             r'\[?[A-F0-9]*:[A-F0-9:]+\]?)' # ipv6
             r'(?::\d+)?' # port
-            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-        return re.match(url_regex, text) is not None
+            r'(?:/?|[/?]\S+)$', IGNORECASE)
+        return match(url_regex, text) is not None
 
 class QrHelper(QMainWindow):
     def __init__(self, parent=None):
@@ -123,7 +130,7 @@ class QrHelper(QMainWindow):
         else:
             self.ui.show_list.setChecked(True)
 
-        keyboard.add_hotkey('ctrl+shift+q', lambda: QMetaObject.invokeMethod(self, "capture_and_decode", Qt.QueuedConnection))
+        add_hotkey('ctrl+shift+q', lambda: QMetaObject.invokeMethod(self, "capture_and_decode", Qt.QueuedConnection))
 
         self.shared_memory = QSharedMemory("SingleInstanceAppKey")
         if not self.shared_memory.create(1):
@@ -134,7 +141,7 @@ class QrHelper(QMainWindow):
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.setWindowIcon(QIcon(":/icons/icon.png"))
             msg_box.exec()
-            sys.exit(1)
+            exit(1)
 
     @Slot()
     def capture_and_decode(self):
@@ -151,7 +158,7 @@ class QrHelper(QMainWindow):
 
     def decode_qr(self, screenshot):
         image = self.pixmap2cv(screenshot)
-        barcodes = zxingcpp.read_barcodes(image)
+        barcodes = read_barcodes(image)
         if len(barcodes) == 0:
             print("Could not find any barcode.")
             return -1
@@ -282,8 +289,8 @@ class QrHelper(QMainWindow):
         width = qimage.width()
         height = qimage.height()
         ptr = qimage.bits()
-        arr = np.array(ptr).reshape((height, width, 4))  # RGBA Array
-        return cv2.cvtColor(arr, cv2.COLOR_RGBA2BGR)
+        arr = array(ptr).reshape((height, width, 4))  # RGBA Array
+        return cvtColor(arr, COLOR_RGBA2BGR)
 
     def save_settings(self):
         settings = QSettings("the0cp", "qr-scan")
@@ -300,8 +307,8 @@ class QrHelper(QMainWindow):
         QApplication.instance().quit()
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    app = QApplication(argv)
     app.setQuitOnLastWindowClosed(False)
     widget = QrHelper()
     widget.hide()
-    sys.exit(app.exec())
+    exit(app.exec())
